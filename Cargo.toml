@@ -1,0 +1,18 @@
+[package]
+name = "tmc2160-driver"
+version = "0.1.0"
+authors = ["Arnav Gupta <arnav@agupta.org>"]
+edition = "2021"
+license = "MIT"
+description = "A no_std, embedded-hal v1.0 driver for the TMC2160 stepper motor driver"
+repository = "https://github.com/guptaarnav/tmc2160-driver"
+readme = "README.md"
+keywords = ["embedded", "hal", "embedded-hal", "stepper", "tmc2160", "no_std"]
+categories = ["embedded", "no-std", "stepper"]
+
+[dependencies]
+embedded-hal = "1.0.0-alpha.8"  # Ensure you use an appropriate embedded-hal v1.0 alpha release.
+bitfield = "0.13"               # Provides bitfield macros, no_std compatible.
+
+[features]
+default = []                    # no_std by default.
