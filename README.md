@@ -30,6 +30,38 @@ Add this to your `Cargo.toml`:
 tmc2160-driver = "0.1.0"
 ```
 
+## Public API
+
+- `Tmc2160::new(spi, cs, en, dir, step) -> Result<Self, Error>`  
+  Creates a new driver instance. It consumes the SPI bus and GPIO pins, and sets initial safe states (e.g., CS high, driver disabled).
+
+- `init() -> Result<(), Error>`
+  Configures default parameters (such as current limits and chopper settings) and prepares the driver for operation.
+
+- `enable_driver() / disable_driver() -> Result<(), Error>`
+  Activates or deactivates the motor driver by toggling the enable (EN) pin (active-low).
+
+- `set_direction(direction: Direction) -> Result<(), Error>`
+  Sets the motor rotation direction (using the Direction enum).
+
+- `step() -> Result<(), Error>` 
+  Generates a single step pulse by toggling the STEP pin. You may insert a delay if required by your hardware.
+
+- `set_current(run_current, hold_current, hold_delay) -> Result<(), Error>`
+  Configures the IHOLD_IRUN register to set the motor current.
+  - run_current (0–31): motor run current (best microstepping performance for values ≥ 16)
+  - hold_current (0–31): motor hold current
+  - hold_delay (0–7): delay (in multiples of 2^18 clocks) before powering down the motor at standstill
+
+- `set_microsteps(microsteps: MicrostepResolution) -> Result<(), Error>`
+  Sets the microstepping resolution by updating the CHOPCONF register.
+
+- `get_driver_status() -> Result<DriverStatus, Error>`
+  Reads and decodes status registers (GSTAT and DRV_STATUS) into a DriverStatus structure.
+
+- `reset() -> Result<(), Error>`
+  Resets the driver to a safe state by re-configuring key registers.
+
 ## Usage
 
 Below is an example of initializing and using the TMC2160 driver. Replace the placeholder SPI and GPIO types with your specific hardware implementations.
@@ -87,32 +119,3 @@ fn main() {
 }
 ```
 
-## Public API
-- `Tmc2160::new(spi, cs, en, dir, step) -> Result<Self, Error>`  Creates a new driver instance. It consumes the SPI bus and GPIO pins, and sets initial safe states (e.g., CS high, driver disabled).
-
-- `init() -> Result<(), Error>`
-  Configures default parameters (such as current limits and chopper settings) and prepares the driver for operation.
-
-- `enable_driver() / disable_driver() -> Result<(), Error>`
-  Activates or deactivates the motor driver by toggling the enable (EN) pin (active-low).
-
-- `set_direction(direction: Direction) -> Result<(), Error>`
-  Sets the motor rotation direction (using the Direction enum).
-
-- `step() -> Result<(), Error>` 
-  Generates a single step pulse by toggling the STEP pin. You may insert a delay if required by your hardware.
-
-- `set_current(run_current, hold_current, hold_delay) -> Result<(), Error>`
-  Configures the IHOLD_IRUN register to set the motor current.
-    - run_current (0–31): motor run current (best microstepping performance for values ≥ 16)
-    - hold_current (0–31): motor hold current
-    - hold_delay (0–7): delay (in multiples of 2^18 clocks) before powering down the motor at standstill
-
-- `set_microsteps(microsteps: MicrostepResolution) -> Result<(), Error>`
-  Sets the microstepping resolution by updating the CHOPCONF register.
-
-- `get_driver_status() -> Result<DriverStatus, Error>`
-  Reads and decodes status registers (GSTAT and DRV_STATUS) into a DriverStatus structure.
-
-- `reset() -> Result<(), Error>`
-  Resets the driver to a safe state by re-configuring key registers.
