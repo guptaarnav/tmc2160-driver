@@ -11,27 +11,30 @@
 
 use crate::registers::{ChopConf, IHoldIrun, Register};
 use crate::types::{Direction, DriverStatus, Error, MicrostepResolution, RegisterCache};
+use embedded_hal::delay::DelayNs;
 use embedded_hal::digital::OutputPin;
 use embedded_hal::spi::SpiBus;
 
 /// Main driver structure for the TMC2160.
-pub struct Tmc2160<SPI, CS, EN, DIR, STEP> {
+pub struct Tmc2160<SPI, CS, EN, DIR, STEP, D> {
     spi: SPI,
     cs: CS,
     en: EN,
     dir: DIR,
     step: STEP,
+    delay: D,
     /// Cache for write‑only registers.
     pub register_cache: RegisterCache,
 }
 
-impl<SPI, CS, EN, DIR, STEP, SpiE, PinE> Tmc2160<SPI, CS, EN, DIR, STEP>
+impl<SPI, CS, EN, DIR, STEP, D, SpiE, PinE> Tmc2160<SPI, CS, EN, DIR, STEP, D>
 where
     SPI: SpiBus<u8, Error = SpiE>,
     CS: OutputPin<Error = PinE>,
     EN: OutputPin<Error = PinE>,
     DIR: OutputPin<Error = PinE>,
     STEP: OutputPin<Error = PinE>,
+    D: DelayNs,
 {
     /// Creates a new TMC2160 driver instance.
     ///
@@ -43,6 +46,7 @@ where
         mut en: EN,
         mut dir: DIR,
         mut step: STEP,
+        delay: D,
     ) -> Result<Self, Error<SpiE, PinE>> {
         cs.set_high().map_err(Error::Pin)?;
         en.set_high().map_err(Error::Pin)?;
@@ -54,6 +58,7 @@ where
             en,
             dir,
             step,
+            delay,
             register_cache: RegisterCache::default(),
         })
     }
@@ -95,7 +100,7 @@ where
 
     /// Writes a 32-bit value to a register via SPI.
     ///
-    /// The address is OR’d with 0x80 to indicate a write operation. The 32-bit data is sent MSB first.
+    /// The address is OR'd with 0x80 to indicate a write operation. The 32-bit data is sent MSB first.
     pub fn write_register(&mut self, reg: Register, value: u32) -> Result<(), Error<SpiE, PinE>> {
         let addr = (reg as u8) | 0x80;
         let buf = [
@@ -158,7 +163,10 @@ where
     /// If a minimum pulse width is required, insert a delay between setting the pin high and low.
     pub fn step(&mut self) -> Result<(), Error<SpiE, PinE>> {
         self.step.set_high().map_err(Error::Pin)?;
-        // Insert delay if necessary.
+
+        // delay
+        DelayNs::delay_ns(&mut self.delay, 1000);
+
         self.step.set_low().map_err(Error::Pin)
     }
 
